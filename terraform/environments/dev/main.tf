@@ -17,3 +17,21 @@ module "vault" {
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnet_ids
 }
+
+module "kafka" {
+  source = "../../modules/kafka"
+
+  project_name       = "trading-engine"
+  environment        = "dev"
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+}
+
+module "clickhouse" {
+  source = "../../modules/clickhouse"
+
+  project_name       = "trading-engine"
+  environment        = "dev"
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+}
