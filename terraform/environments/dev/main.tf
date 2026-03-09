@@ -54,3 +54,10 @@ module "eks" {
   private_subnet_ids = module.vpc.private_subnet_ids
   public_subnet_ids  = module.vpc.public_subnet_ids
 }
+
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project_name = "trading-engine"
+  environment  = "dev"
+}
