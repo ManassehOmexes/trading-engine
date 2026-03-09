@@ -19,7 +19,7 @@ variable "private_subnet_ids" {
 }
 
 variable "allowed_cidr_blocks" {
-  description = "CIDR Bloecke die auf ClickHouse zugreifen duerfen"
+  description = "CIDR Blöcke die auf ClickHouse zugreifen duerfen"
   type        = list(string)
   default     = ["10.0.0.0/16"]
 }
@@ -31,7 +31,7 @@ variable "instance_type" {
 }
 
 variable "storage_gb" {
-  description = "EBS Storage fuer ClickHouse Daten in GB"
+  description = "EBS Storage für ClickHouse Daten in GB"
   type        = number
   default     = 100
 }
