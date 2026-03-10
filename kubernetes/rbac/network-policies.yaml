@@ -1,0 +1,76 @@
+# Data Ingestion darf nur nach Kafka schreiben (ausgehend)
+# Niemand darf direkt auf Data Ingestion zugreifen
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: data-ingestion-policy
+  namespace: data-ingestion
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []  # Kein eingehender Verkehr erlaubt
+  egress:
+    - {}       # Ausgehender Verkehr erlaubt (nach Kafka)
+
+---
+# ML Services duerfen Kafka lesen und nach ClickHouse schreiben
+# Kein direkter Zugriff auf Trading Namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ml-services-policy
+  namespace: ml-services
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: trading
+  egress:
+    - {}
+
+---
+# Trading Namespace: Risk Manager und Order Executor
+# Order Executor darf NUR vom Risk Manager aufgerufen werden
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: order-executor-policy
+  namespace: trading
+spec:
+  podSelector:
+    matchLabels:
+      app: order-executor
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: risk-manager  # NUR Risk Manager darf Order Executor aufrufen
+
+---
+# Notifications darf nur ausgehende Verbindungen (Telegram API)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: notifications-policy
+  namespace: notifications
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: trading
+  egress:
+    - {}
