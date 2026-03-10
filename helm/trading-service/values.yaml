@@ -1,0 +1,41 @@
+# Standard-Werte die fuer jeden Service ueberschrieben werden koennen
+
+replicaCount: 1
+
+image:
+  repository: ""      # Wird pro Service gesetzt (ECR URL)
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP     # Nur intern erreichbar, kein Load Balancer
+  port: 8080
+
+resources:
+  limits:
+    cpu: "500m"       # 0.5 CPU Kerne
+    memory: "512Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+
+env: {}               # Umgebungsvariablen pro Service
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+
+serviceAccount:
+  name: ""            # Wird pro Service gesetzt
+
+namespace: "default"  # Wird pro Service gesetzt

@@ -1,0 +1,21 @@
+replicaCount: 1
+namespace: trading
+serviceAccount:
+  name: risk-manager-sa
+image:
+  repository: ""
+  tag: "latest"
+resources:
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+env:
+  - name: MAX_POSITION_SIZE_USD
+    value: "1000"
+  - name: MAX_DAILY_LOSS_USD
+    value: "500"
+  - name: ORDER_EXECUTOR_URL
+    value: "http://order-executor:8080"

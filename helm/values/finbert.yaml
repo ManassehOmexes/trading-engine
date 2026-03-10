@@ -1,0 +1,21 @@
+replicaCount: 1
+namespace: ml-services
+serviceAccount:
+  name: finbert-sa
+image:
+  repository: ""
+  tag: "latest"
+resources:
+  limits:
+    cpu: "2000m"
+    memory: "4096Mi"
+  requests:
+    cpu: "500m"
+    memory: "2048Mi"
+env:
+  - name: KAFKA_BOOTSTRAP_SERVERS
+    value: ""
+  - name: CLICKHOUSE_HOST
+    value: ""
+  - name: MODEL_NAME
+    value: "ProsusAI/finbert"

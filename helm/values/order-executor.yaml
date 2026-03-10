@@ -1,0 +1,19 @@
+replicaCount: 1
+namespace: trading
+serviceAccount:
+  name: order-executor-sa
+image:
+  repository: ""
+  tag: "latest"
+resources:
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+env:
+  - name: ALPACA_BASE_URL
+    value: "https://paper-api.alpaca.markets"
+  - name: IMMUDB_HOST
+    value: ""

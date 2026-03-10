@@ -1,0 +1,19 @@
+replicaCount: 1
+namespace: data-ingestion
+serviceAccount:
+  name: data-ingestion-sa
+image:
+  repository: ""
+  tag: "latest"
+resources:
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+env:
+  - name: KAFKA_BOOTSTRAP_SERVERS
+    value: ""
+  - name: ALPACA_BASE_URL
+    value: "https://stream.data.alpaca.markets"
