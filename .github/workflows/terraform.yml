@@ -21,17 +21,14 @@ jobs:
       pull-requests: write
 
     steps:
-      # ─── Schritt 1: Code auschecken ──────────────────────────────
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ─── Schritt 2: Terraform installieren ───────────────────────
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      # ─── Schritt 3: AWS Credentials konfigurieren ────────────────
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -39,38 +36,32 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
-      # ─── Schritt 4: Format pruefen ────────────────────────────────
       - name: Terraform Format Check
         working-directory: ${{ env.WORKING_DIR }}
         run: terraform fmt -check -recursive
-        continue-on-error: false
 
-      # ─── Schritt 5: Initialisieren ───────────────────────────────
       - name: Terraform Init
         working-directory: ${{ env.WORKING_DIR }}
         run: terraform init
 
-      # ─── Schritt 6: Syntax validieren ────────────────────────────
       - name: Terraform Validate
         working-directory: ${{ env.WORKING_DIR }}
         run: terraform validate
 
-      # ─── Schritt 7: Plan erstellen ───────────────────────────────
       - name: Terraform Plan
+        id: plan
         working-directory: ${{ env.WORKING_DIR }}
-        run: terraform plan -no-color
+        run: terraform plan -no-color 2>&1 | tee plan_output.txt
         continue-on-error: true
 
-      # ─── Schritt 8: Plan als PR Kommentar posten ─────────────────
       - name: Post Plan to PR
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
         with:
           script: |
-            const output = `#### Terraform Plan
-            \`\`\`
-            ${{ steps.plan.outputs.stdout }}
-            \`\`\``;
+            const fs = require('fs');
+            const plan = fs.readFileSync('${{ env.WORKING_DIR }}/plan_output.txt', 'utf8');
+            const output = `#### Terraform Plan\n\`\`\`\n${plan}\n\`\`\``;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
