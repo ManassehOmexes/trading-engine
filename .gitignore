@@ -19,3 +19,4 @@ venv/
 *.pem
 *.key
 secrets/
+.venv/

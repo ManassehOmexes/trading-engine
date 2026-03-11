@@ -1,1 +1,16 @@
-placeholder
+# Alpaca WebSocket API
+alpaca-py==0.38.0
+
+# Kafka Producer
+confluent-kafka==2.8.0
+
+# Umgebungsvariablen
+python-dotenv==1.1.0
+
+# Structured Logging (JSON Format für CloudWatch)
+structlog==25.1.0
+
+# HTTP Health Check Endpoint
+fastapi==0.115.12
+uvicorn==0.34.2
+pytz==2025.2
