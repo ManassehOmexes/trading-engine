@@ -1,1 +1,18 @@
-placeholder
+# FinBERT Modell
+transformers==4.51.3
+torch==2.6.0
+
+# Kafka Consumer
+confluent-kafka==2.8.0
+
+# ClickHouse Client
+clickhouse-connect==0.8.14
+
+# Health Check
+fastapi==0.115.12
+uvicorn==0.34.2
+
+# Utilities
+python-dotenv==1.1.0
+structlog==25.1.0
+pytz==2025.2
