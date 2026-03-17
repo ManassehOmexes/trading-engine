@@ -16,18 +16,22 @@ resources:
     memory: 256Mi
 
 env:
+  - name: TELEGRAM_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: telegram-credentials
+        key: token
+  - name: TELEGRAM_CHAT_ID
+    valueFrom:
+      secretKeyRef:
+        name: telegram-credentials
+        key: chat-id
   - name: KAFKA_BOOTSTRAP_SERVERS
     valueFrom:
       secretKeyRef:
         name: kafka-credentials
         key: bootstrap-servers
   - name: KAFKA_GROUP_ID
-    value: "risk-manager-group"
-  - name: MAX_POSITION_PCT
-    value: "0.05"
-  - name: MAX_PORTFOLIO_RISK
-    value: "0.20"
-  - name: ATR_MULTIPLIER
-    value: "2.0"
-  - name: TOTAL_CAPITAL
-    value: "10000.0"
+    value: "telegram-bot-group"
+  - name: APPROVE_TIMEOUT_SECONDS
+    value: "300"

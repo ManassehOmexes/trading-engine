@@ -1,19 +1,35 @@
 replicaCount: 1
-namespace: data-ingestion
-serviceAccount:
-  name: data-ingestion-sa
 image:
-  repository: ""
-  tag: "latest"
+  repository: # wird von CI/CD gesetzt
+  tag: latest
+  pullPolicy: Always
+
+service:
+  port: 8080
+
 resources:
-  limits:
-    cpu: "500m"
-    memory: "512Mi"
   requests:
-    cpu: "200m"
-    memory: "256Mi"
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
 env:
+  - name: ALPACA_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: alpaca-credentials
+        key: api-key
+  - name: ALPACA_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: alpaca-credentials
+        key: secret-key
   - name: KAFKA_BOOTSTRAP_SERVERS
-    value: ""
-  - name: ALPACA_BASE_URL
-    value: "https://stream.data.alpaca.markets"
+    valueFrom:
+      secretKeyRef:
+        name: kafka-credentials
+        key: bootstrap-servers
+  - name: SYMBOLS
+    value: "AAPL,MSFT,GOOGL,AMZN,NVDA"

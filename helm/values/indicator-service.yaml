@@ -9,11 +9,11 @@ service:
 
 resources:
   requests:
-    cpu: 1000m
-    memory: 3072Mi
+    cpu: 250m
+    memory: 256Mi
   limits:
-    cpu: 2000m
-    memory: 4096Mi
+    cpu: 500m
+    memory: 512Mi
 
 env:
   - name: KAFKA_BOOTSTRAP_SERVERS
@@ -32,8 +32,8 @@ env:
         name: clickhouse-credentials
         key: port
   - name: KAFKA_GROUP_ID
-    value: "finbert-consumer-group"
-  - name: MODEL_NAME
-    value: "ProsusAI/finbert"
-  - name: SENTIMENT_THRESHOLD
-    value: "0.3"
+    value: "indicator-consumer-group"
+  - name: RSI_PERIOD
+    value: "14"
+  - name: MIN_BARS
+    value: "30"

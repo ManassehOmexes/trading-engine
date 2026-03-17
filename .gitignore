@@ -20,3 +20,8 @@ venv/
 *.key
 secrets/
 .venv/
+
+# Kubernetes Secrets mit echten Werten
+kubernetes/secrets/secrets.local.yaml
+**/.env
+**/.env.local
