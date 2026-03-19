@@ -1,0 +1,49 @@
+# Vault Agent Konfiguration
+# Wird als ConfigMap in Kubernetes deployed
+# Ein ConfigMap pro Namespace
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-agent-config
+  namespace: trading
+data:
+  vault-agent.hcl: |
+    vault {
+      address = "http://vault.trading-engine.internal:8200"
+    }
+
+    auto_auth {
+      method "kubernetes" {
+        mount_path = "auth/kubernetes"
+        config = {
+          role = "trading-engine-role"
+        }
+      }
+    }
+
+    template {
+      contents = <<-TMPL
+        {{ with secret "secret/trading-engine/alpaca" }}
+        export ALPACA_API_KEY="{{ .Data.data.api_key }}"
+        export ALPACA_SECRET_KEY="{{ .Data.data.secret_key }}"
+        {{ end }}
+        {{ with secret "secret/trading-engine/kafka" }}
+        export KAFKA_BOOTSTRAP_SERVERS="{{ .Data.data.bootstrap_servers }}"
+        {{ end }}
+        {{ with secret "secret/trading-engine/clickhouse" }}
+        export CLICKHOUSE_HOST="{{ .Data.data.host }}"
+        export CLICKHOUSE_PORT="{{ .Data.data.port }}"
+        export CLICKHOUSE_USER="{{ .Data.data.user }}"
+        export CLICKHOUSE_PASSWORD="{{ .Data.data.password }}"
+        {{ end }}
+      TMPL
+      destination = "/vault/secrets/env"
+      command     = "/bin/sh -c 'source /vault/secrets/env'"
+    }
+
+    sink "file" {
+      config = {
+        path = "/vault/token"
+      }
+    }

@@ -33,3 +33,8 @@ env:
         key: bootstrap-servers
   - name: SYMBOLS
     value: "AAPL,MSFT,GOOGL,AMZN,NVDA"
+
+vault:
+  enabled: false          # true wenn Vault deployed ist
+  address: "http://vault.trading-engine.internal:8200"
+  role: "trading-engine-role"
