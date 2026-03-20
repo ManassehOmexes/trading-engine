@@ -1,26 +1,21 @@
-# ─── BLOCK 1: Security Group ───────────────────────────────────────────────
-
+# Security Group
 resource "aws_security_group" "clickhouse" {
-  name        = "${var.project_name}-${var.environment}-clickhouse-sg"
-  description = "Security Group fuer ClickHouse"
+  name        = "${var.project_name}-clickhouse-sg"
+  description = "ClickHouse Security Group"
   vpc_id      = var.vpc_id
 
-  # HTTP Interface fuer Abfragen
   ingress {
-    description = "ClickHouse HTTP"
     from_port   = 8123
     to_port     = 8123
     protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
+    cidr_blocks = [var.vpc_cidr]
   }
 
-  # Native TCP Interface (schneller als HTTP)
   ingress {
-    description = "ClickHouse Native TCP"
     from_port   = 9000
     to_port     = 9000
     protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
+    cidr_blocks = [var.vpc_cidr]
   }
 
   egress {
@@ -31,15 +26,13 @@ resource "aws_security_group" "clickhouse" {
   }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-clickhouse-sg"
+    Name = "${var.project_name}-clickhouse-sg"
   }
 }
 
-# ─── BLOCK 2: IAM Role ─────────────────────────────────────────────────────
-# ClickHouse EC2 Instanz braucht Zugriff auf S3 fuer Backups
-
+# IAM Role
 resource "aws_iam_role" "clickhouse" {
-  name = "${var.project_name}-${var.environment}-clickhouse-role"
+  name = "${var.project_name}-clickhouse-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -49,60 +42,46 @@ resource "aws_iam_role" "clickhouse" {
       Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-clickhouse-role"
-  }
 }
 
 resource "aws_iam_role_policy" "clickhouse" {
-  name = "${var.project_name}-${var.environment}-clickhouse-policy"
+  name = "${var.project_name}-clickhouse-policy"
   role = aws_iam_role.clickhouse.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
-      Action = [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject",
-        "s3:ListBucket"
-      ]
-      Resource = [
-        aws_s3_bucket.clickhouse_backup.arn,
-        "${aws_s3_bucket.clickhouse_backup.arn}/*"
-      ]
+      Effect   = "Allow"
+      Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+      Resource = ["${aws_s3_bucket.clickhouse.arn}", "${aws_s3_bucket.clickhouse.arn}/*"]
     }]
   })
 }
 
 resource "aws_iam_instance_profile" "clickhouse" {
-  name = "${var.project_name}-${var.environment}-clickhouse-profile"
+  name = "${var.project_name}-clickhouse-profile"
   role = aws_iam_role.clickhouse.name
 }
 
-# ─── BLOCK 3: S3 Backup Bucket ─────────────────────────────────────────────
-# Taeglich automatisches Backup der ClickHouse Daten nach S3
-
-resource "aws_s3_bucket" "clickhouse_backup" {
-  bucket = "${var.project_name}-${var.environment}-clickhouse-backup"
+# S3 Bucket fuer ClickHouse Backups
+resource "aws_s3_bucket" "clickhouse" {
+  bucket        = "${var.project_name}-clickhouse-${var.environment}"
+  force_destroy = true
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-clickhouse-backup"
+    Name = "${var.project_name}-clickhouse"
   }
 }
 
-resource "aws_s3_bucket_versioning" "clickhouse_backup" {
-  bucket = aws_s3_bucket.clickhouse_backup.id
+resource "aws_s3_bucket_versioning" "clickhouse" {
+  bucket = aws_s3_bucket.clickhouse.id
   versioning_configuration {
     status = "Enabled"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "clickhouse_backup" {
-  bucket = aws_s3_bucket.clickhouse_backup.id
-
+resource "aws_s3_bucket_server_side_encryption_configuration" "clickhouse" {
+  bucket = aws_s3_bucket.clickhouse.id
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
@@ -110,81 +89,54 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "clickhouse_backup
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "clickhouse_backup" {
-  bucket                  = aws_s3_bucket.clickhouse_backup.id
+resource "aws_s3_bucket_public_access_block" "clickhouse" {
+  bucket                  = aws_s3_bucket.clickhouse.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
 
-# ─── BLOCK 4: EBS Volume ───────────────────────────────────────────────────
-# Separates Volume fuer ClickHouse Daten (unabhaengig von der OS-Disk)
-
-resource "aws_ebs_volume" "clickhouse_data" {
-  availability_zone = "us-east-1a"
-  size              = var.storage_gb
+# EBS Volume
+resource "aws_ebs_volume" "clickhouse" {
+  availability_zone = "${var.aws_region}a"
+  size              = 50
   type              = "gp3"
-  encrypted         = true
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-clickhouse-data"
+    Name = "${var.project_name}-clickhouse-data"
   }
 }
 
-# ─── BLOCK 5: EC2 Instanz ──────────────────────────────────────────────────
-
+# EC2 Instance - t3.small (Free Tier nicht eligible, ~15 USD/Monat)
 resource "aws_instance" "clickhouse" {
   ami                    = var.ami_id
-  instance_type          = var.instance_type
+  instance_type          = "t3.small"
   subnet_id              = var.private_subnet_ids[0]
   vpc_security_group_ids = [aws_security_group.clickhouse.id]
   iam_instance_profile   = aws_iam_instance_profile.clickhouse.name
 
-  # Root Volume (OS)
-  root_block_device {
-    volume_size           = 20
-    volume_type           = "gp3"
-    encrypted             = true
-    delete_on_termination = true
-  }
-
-  # User Data: Installiert ClickHouse beim ersten Start automatisch
-  user_data = <<-USERDATA
+  user_data = <<-EOF
     #!/bin/bash
-    set -e
-
-    # System aktualisieren
     apt-get update -y
-
-    # ClickHouse Repository hinzufuegen
     apt-get install -y apt-transport-https ca-certificates curl gnupg
-    curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' \
-      | gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
-    echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] \
-      https://packages.clickhouse.com/deb stable main" \
-      | tee /etc/apt/sources.list.d/clickhouse.list
 
-    # ClickHouse installieren
+    curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
+    echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] https://packages.clickhouse.com/deb stable main" | tee /etc/apt/sources.list.d/clickhouse.list
     apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y \
-      clickhouse-server clickhouse-client
+    apt-get install -y clickhouse-server clickhouse-client
 
-    # ClickHouse starten und beim Boot aktivieren
     systemctl enable clickhouse-server
     systemctl start clickhouse-server
-
-    echo "ClickHouse installation complete" > /var/log/clickhouse-install.log
-  USERDATA
+  EOF
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-clickhouse"
+    Name = "${var.project_name}-clickhouse"
   }
 }
 
-# EBS Volume an EC2 Instanz anhaengen
-resource "aws_volume_attachment" "clickhouse_data" {
+resource "aws_volume_attachment" "clickhouse" {
   device_name = "/dev/sdf"
-  volume_id   = aws_ebs_volume.clickhouse_data.id
+  volume_id   = aws_ebs_volume.clickhouse.id
   instance_id = aws_instance.clickhouse.id
 }

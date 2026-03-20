@@ -62,7 +62,7 @@ def create_kafka_producer() -> Producer:
     return Producer(config)
 
 def delivery_report(err, msg):
-    """Callback: Wird aufgerufen wenn Kafka die Nachricht bestaetigt oder ablehnt."""
+    """Callback: Wird aufgerufen wenn Kafka die Nachricht bestätigt oder ablehnt."""
     if err:
         log.error("kafka_delivery_failed",
                   topic=msg.topic(),

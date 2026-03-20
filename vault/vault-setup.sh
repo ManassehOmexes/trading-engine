@@ -1,6 +1,6 @@
 #!/bin/bash
 # Vault Setup Script
-# Wird einmalig nach terraform apply ausgefuehrt
+# Wird einmalig nach terraform apply ausgeführt
 # Setzt Secrets und Kubernetes Auth Methode auf
 
 set -e

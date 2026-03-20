@@ -87,7 +87,7 @@ class RiskCalculator:
 
     def evaluate(self, signal: TradeSignal) -> RiskDecision:
         """
-        Bewertet ein Handelssignal und gibt eine Risikoentscheidung zurueck.
+        Bewertet ein Handelssignal und gibt eine Risikoentscheidung zurück.
         """
         # Schritt 1: Signalstaerke pruefen
         if not self._signals_agree(signal):
