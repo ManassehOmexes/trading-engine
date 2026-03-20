@@ -30,7 +30,6 @@ resource "aws_security_group" "clickhouse" {
   }
 }
 
-# IAM Role
 resource "aws_iam_role" "clickhouse" {
   name = "${var.project_name}-clickhouse-role"
 
@@ -63,29 +62,21 @@ resource "aws_iam_instance_profile" "clickhouse" {
   role = aws_iam_role.clickhouse.name
 }
 
-# S3 Bucket fuer ClickHouse Backups
 resource "aws_s3_bucket" "clickhouse" {
   bucket        = "${var.project_name}-clickhouse-${var.environment}"
   force_destroy = true
-
-  tags = {
-    Name = "${var.project_name}-clickhouse"
-  }
+  tags = { Name = "${var.project_name}-clickhouse" }
 }
 
 resource "aws_s3_bucket_versioning" "clickhouse" {
   bucket = aws_s3_bucket.clickhouse.id
-  versioning_configuration {
-    status = "Enabled"
-  }
+  versioning_configuration { status = "Enabled" }
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "clickhouse" {
   bucket = aws_s3_bucket.clickhouse.id
   rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
+    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
   }
 }
 
@@ -97,22 +88,17 @@ resource "aws_s3_bucket_public_access_block" "clickhouse" {
   restrict_public_buckets = true
 }
 
-# EBS Volume
-resource "aws_ebs_volume" "clickhouse" {
-  availability_zone = var.private_subnet_ids[0] == "" ? "us-east-1a" : data.aws_subnet.first.availability_zone
-  size              = var.storage_gb
-  type              = "gp3"
-
-  tags = {
-    Name = "${var.project_name}-clickhouse-data"
-  }
-}
-
 data "aws_subnet" "first" {
   id = var.private_subnet_ids[0]
 }
 
-# EC2 Instance - t3.small
+resource "aws_ebs_volume" "clickhouse" {
+  availability_zone = data.aws_subnet.first.availability_zone
+  size              = var.storage_gb
+  type              = "gp3"
+  tags = { Name = "${var.project_name}-clickhouse-data" }
+}
+
 resource "aws_instance" "clickhouse" {
   ami                    = var.ami_id
   instance_type          = "t3.small"
@@ -124,19 +110,15 @@ resource "aws_instance" "clickhouse" {
     #!/bin/bash
     apt-get update -y
     apt-get install -y apt-transport-https ca-certificates curl gnupg
-
     curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
     echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] https://packages.clickhouse.com/deb stable main" | tee /etc/apt/sources.list.d/clickhouse.list
     apt-get update -y
     apt-get install -y clickhouse-server clickhouse-client
-
     systemctl enable clickhouse-server
     systemctl start clickhouse-server
   USERDATA
 
-  tags = {
-    Name = "${var.project_name}-clickhouse"
-  }
+  tags = { Name = "${var.project_name}-clickhouse" }
 }
 
 resource "aws_volume_attachment" "clickhouse" {
