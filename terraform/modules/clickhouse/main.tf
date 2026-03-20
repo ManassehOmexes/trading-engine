@@ -8,14 +8,14 @@ resource "aws_security_group" "clickhouse" {
     from_port   = 8123
     to_port     = 8123
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   ingress {
     from_port   = 9000
     to_port     = 9000
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   egress {
@@ -99,8 +99,8 @@ resource "aws_s3_bucket_public_access_block" "clickhouse" {
 
 # EBS Volume
 resource "aws_ebs_volume" "clickhouse" {
-  availability_zone = "${var.aws_region}a"
-  size              = 50
+  availability_zone = var.private_subnet_ids[0] == "" ? "us-east-1a" : data.aws_subnet.first.availability_zone
+  size              = var.storage_gb
   type              = "gp3"
 
   tags = {
@@ -108,7 +108,11 @@ resource "aws_ebs_volume" "clickhouse" {
   }
 }
 
-# EC2 Instance - t3.small (Free Tier nicht eligible, ~15 USD/Monat)
+data "aws_subnet" "first" {
+  id = var.private_subnet_ids[0]
+}
+
+# EC2 Instance - t3.small
 resource "aws_instance" "clickhouse" {
   ami                    = var.ami_id
   instance_type          = "t3.small"
@@ -116,7 +120,7 @@ resource "aws_instance" "clickhouse" {
   vpc_security_group_ids = [aws_security_group.clickhouse.id]
   iam_instance_profile   = aws_iam_instance_profile.clickhouse.name
 
-  user_data = <<-EOF
+  user_data = <<-USERDATA
     #!/bin/bash
     apt-get update -y
     apt-get install -y apt-transport-https ca-certificates curl gnupg
@@ -128,7 +132,7 @@ resource "aws_instance" "clickhouse" {
 
     systemctl enable clickhouse-server
     systemctl start clickhouse-server
-  EOF
+  USERDATA
 
   tags = {
     Name = "${var.project_name}-clickhouse"

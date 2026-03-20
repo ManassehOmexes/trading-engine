@@ -8,21 +8,21 @@ resource "aws_security_group" "immudb" {
     from_port   = 3322
     to_port     = 3322
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   ingress {
     from_port   = 9497
     to_port     = 9497
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   egress {
@@ -106,8 +106,8 @@ resource "aws_s3_bucket_public_access_block" "immudb" {
 
 # EBS Volume
 resource "aws_ebs_volume" "immudb" {
-  availability_zone = "${var.aws_region}a"
-  size              = 50
+  availability_zone = data.aws_subnet.first.availability_zone
+  size              = var.storage_gb
   type              = "gp3"
 
   tags = {
@@ -115,7 +115,11 @@ resource "aws_ebs_volume" "immudb" {
   }
 }
 
-# EC2 Instance - t3.micro (Free Tier eligible, reicht fuer ImmuDB)
+data "aws_subnet" "first" {
+  id = var.private_subnet_ids[0]
+}
+
+# EC2 Instance - t3.micro
 resource "aws_instance" "immudb" {
   ami                    = var.ami_id
   instance_type          = "t3.micro"
@@ -123,7 +127,7 @@ resource "aws_instance" "immudb" {
   vpc_security_group_ids = [aws_security_group.immudb.id]
   iam_instance_profile   = aws_iam_instance_profile.immudb.name
 
-  user_data = <<-EOF
+  user_data = <<-USERDATA
     #!/bin/bash
     apt-get update -y
     apt-get install -y wget
@@ -137,22 +141,22 @@ resource "aws_instance" "immudb" {
     chown immudb:immudb /var/lib/immudb
 
     cat > /etc/systemd/system/immudb.service << 'SERVICE'
-    [Unit]
-    Description=ImmuDB
-    After=network.target
+[Unit]
+Description=ImmuDB
+After=network.target
 
-    [Service]
-    User=immudb
-    ExecStart=/usr/local/bin/immudb
-    Restart=always
+[Service]
+User=immudb
+ExecStart=/usr/local/bin/immudb
+Restart=always
 
-    [Install]
-    WantedBy=multi-user.target
-    SERVICE
+[Install]
+WantedBy=multi-user.target
+SERVICE
 
     systemctl enable immudb
     systemctl start immudb
-  EOF
+  USERDATA
 
   tags = {
     Name = "${var.project_name}-immudb"
