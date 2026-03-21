@@ -46,8 +46,8 @@ module "immudb" {
 }
 
 module "eks" {
-  source             = "../../modules/eks"
-  
+  source = "../../modules/eks"
+
   project_name       = "trading-engine"
   environment        = "dev"
   vpc_id             = module.vpc.vpc_id

@@ -69,7 +69,7 @@ resource "aws_iam_instance_profile" "immudb" {
 resource "aws_s3_bucket" "immudb" {
   bucket        = "${var.project_name}-immudb-${var.environment}"
   force_destroy = true
-  tags = { Name = "${var.project_name}-immudb" }
+  tags          = { Name = "${var.project_name}-immudb" }
 }
 
 resource "aws_s3_bucket_versioning" "immudb" {
@@ -100,7 +100,7 @@ resource "aws_ebs_volume" "immudb" {
   availability_zone = data.aws_subnet.first.availability_zone
   size              = var.storage_gb
   type              = "gp3"
-  tags = { Name = "${var.project_name}-immudb-data" }
+  tags              = { Name = "${var.project_name}-immudb-data" }
 }
 
 resource "aws_instance" "immudb" {

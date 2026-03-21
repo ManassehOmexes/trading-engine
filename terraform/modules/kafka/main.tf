@@ -47,8 +47,8 @@ resource "aws_security_group" "msk" {
 # ─── BLOCK 2: MSK Konfiguration ────────────────────────────────────────────
 
 resource "aws_msk_configuration" "main" {
-  name              = "${var.project_name}-${var.environment}-msk-config"
-  kafka_versions    = [var.kafka_version]
+  name           = "${var.project_name}-${var.environment}-msk-config"
+  kafka_versions = [var.kafka_version]
 
   server_properties = <<PROPERTIES
 # Nachrichten werden 7 Tage gespeichert (604800000 ms)

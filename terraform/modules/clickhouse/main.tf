@@ -65,7 +65,7 @@ resource "aws_iam_instance_profile" "clickhouse" {
 resource "aws_s3_bucket" "clickhouse" {
   bucket        = "${var.project_name}-clickhouse-${var.environment}"
   force_destroy = true
-  tags = { Name = "${var.project_name}-clickhouse" }
+  tags          = { Name = "${var.project_name}-clickhouse" }
 }
 
 resource "aws_s3_bucket_versioning" "clickhouse" {
@@ -96,7 +96,7 @@ resource "aws_ebs_volume" "clickhouse" {
   availability_zone = data.aws_subnet.first.availability_zone
   size              = var.storage_gb
   type              = "gp3"
-  tags = { Name = "${var.project_name}-clickhouse-data" }
+  tags              = { Name = "${var.project_name}-clickhouse-data" }
 }
 
 resource "aws_instance" "clickhouse" {
