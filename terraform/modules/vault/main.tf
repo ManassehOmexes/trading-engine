@@ -154,3 +154,71 @@ resource "aws_s3_bucket_public_access_block" "vault_storage" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+# EC2 Instance fuer Vault
+data "aws_subnet" "vault_first" {
+  id = var.private_subnet_ids[0]
+}
+
+resource "aws_instance" "vault" {
+  ami                    = var.ami_id
+  instance_type          = "t3.micro"
+  subnet_id              = var.private_subnet_ids[0]
+  vpc_security_group_ids = [aws_security_group.vault.id]
+  iam_instance_profile   = aws_iam_instance_profile.vault.name
+
+  user_data = <<-USERDATA
+    #!/bin/bash
+    apt-get update -y
+    apt-get install -y wget unzip
+
+    wget https://releases.hashicorp.com/vault/1.15.4/vault_1.15.4_linux_amd64.zip
+    unzip vault_1.15.4_linux_amd64.zip
+    mv vault /usr/local/bin/
+    chmod +x /usr/local/bin/vault
+
+    useradd -r -s /bin/false vault
+    mkdir -p /etc/vault /opt/vault/data
+    chown vault:vault /opt/vault/data
+
+    cat > /etc/vault/vault.hcl << 'CONFIG'
+ui = true
+
+storage "file" {
+  path = "/opt/vault/data"
+}
+
+listener "tcp" {
+  address     = "0.0.0.0:8200"
+  tls_disable = true
+}
+
+seal "awskms" {
+  region     = "us-east-1"
+  kms_key_id = "${aws_kms_key.vault.key_id}"
+}
+CONFIG
+
+    cat > /etc/systemd/system/vault.service << 'SERVICE'
+[Unit]
+Description=HashiCorp Vault
+After=network.target
+
+[Service]
+User=vault
+ExecStart=/usr/local/bin/vault server -config=/etc/vault/vault.hcl
+Restart=always
+Environment=VAULT_ADDR=http://127.0.0.1:8200
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+    systemctl enable vault
+    systemctl start vault
+  USERDATA
+
+  tags = {
+    Name = "${var.project_name}-vault"
+  }
+}

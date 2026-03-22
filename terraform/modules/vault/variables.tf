@@ -23,3 +23,9 @@ variable "allowed_cidr_blocks" {
   type        = list(string)
   default     = ["10.0.0.0/16"]
 }
+
+variable "ami_id" {
+  description = "Amazon Machine Image ID (Ubuntu 22.04 LTS)"
+  type        = string
+  default     = "ami-0c7217cdde317cfec"
+}
