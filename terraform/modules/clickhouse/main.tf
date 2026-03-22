@@ -133,3 +133,8 @@ resource "aws_volume_attachment" "clickhouse" {
   volume_id   = aws_ebs_volume.clickhouse.id
   instance_id = aws_instance.clickhouse.id
 }
+
+resource "aws_iam_role_policy_attachment" "clickhouse_ssm" {
+  role       = aws_iam_role.clickhouse.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
