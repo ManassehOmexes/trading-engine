@@ -88,7 +88,8 @@ resource "aws_iam_role_policy" "vault" {
         Action = [
           "kms:Encrypt",
           "kms:Decrypt",
-          "kms:GenerateDataKey"
+          "kms:GenerateDataKey",
+          "kms:DescribeKey"
         ]
         Resource = aws_kms_key.vault.arn
       }
