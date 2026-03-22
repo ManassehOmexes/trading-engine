@@ -170,7 +170,10 @@ resource "aws_instance" "vault" {
   user_data = <<-USERDATA
     #!/bin/bash
     apt-get update -y
-    apt-get install -y wget unzip
+    apt-get install -y wget unzip snapd
+    snap install amazon-ssm-agent --classic
+    systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+    systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
 
     wget https://releases.hashicorp.com/vault/1.15.4/vault_1.15.4_linux_amd64.zip
     unzip vault_1.15.4_linux_amd64.zip
@@ -221,4 +224,9 @@ SERVICE
   tags = {
     Name = "${var.project_name}-vault"
   }
+}
+
+resource "aws_iam_role_policy_attachment" "vault_ssm" {
+  role       = aws_iam_role.vault.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
