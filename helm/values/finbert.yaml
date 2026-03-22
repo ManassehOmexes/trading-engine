@@ -1,6 +1,6 @@
 replicaCount: 1
 image:
-  repository: # wird von CI/CD gesetzt
+  repository: 710220507619.dkr.ecr.us-east-1.amazonaws.com/trading-engine-dev-finbert
   tag: latest
   pullPolicy: Always
 
@@ -9,11 +9,11 @@ service:
 
 resources:
   requests:
-    cpu: 1000m
-    memory: 3072Mi
+    cpu: 500m
+    memory: 768Mi
   limits:
     cpu: 2000m
-    memory: 4096Mi
+    memory: 2048 Mi
 
 env:
   - name: KAFKA_BOOTSTRAP_SERVERS

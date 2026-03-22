@@ -1,6 +1,6 @@
 replicaCount: 1
 image:
-  repository: # wird von CI/CD gesetzt
+  repository: 710220507619.dkr.ecr.us-east-1.amazonaws.com/trading-engine-dev-order-executor
   tag: latest
   pullPolicy: Always
 
