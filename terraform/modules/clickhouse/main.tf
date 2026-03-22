@@ -110,10 +110,17 @@ resource "aws_instance" "clickhouse" {
     #!/bin/bash
     apt-get update -y
     apt-get install -y apt-transport-https ca-certificates curl gnupg
-    curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
-    echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] https://packages.clickhouse.com/deb stable main" | tee /etc/apt/sources.list.d/clickhouse.list
-    apt-get update -y
-    apt-get install -y clickhouse-server clickhouse-client
+
+    # SSM Agent
+    snap install amazon-ssm-agent --classic
+    systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+    systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+
+    # ClickHouse
+    curl -fsSL https://packages.clickhouse.com/deb/pool/main/c/clickhouse/clickhouse-common-static_24.3.3.102_amd64.deb -o /tmp/ch-common.deb
+    curl -fsSL https://packages.clickhouse.com/deb/pool/main/c/clickhouse/clickhouse-server_24.3.3.102_amd64.deb -o /tmp/ch-server.deb
+    curl -fsSL https://packages.clickhouse.com/deb/pool/main/c/clickhouse/clickhouse-client_24.3.3.102_amd64.deb -o /tmp/ch-client.deb
+    dpkg -i /tmp/ch-common.deb /tmp/ch-server.deb /tmp/ch-client.deb
     systemctl enable clickhouse-server
     systemctl start clickhouse-server
   USERDATA
