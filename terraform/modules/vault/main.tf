@@ -122,12 +122,14 @@ resource "aws_kms_alias" "vault" {
 }
 
 resource "aws_s3_bucket" "vault_storage" {
-  bucket = "${var.project_name}-${var.environment}-vault-storage"
+  bucket        = "${var.project_name}-${var.environment}-vault-storage"
+  force_destroy = true
 
   tags = {
     Name = "${var.project_name}-${var.environment}-vault-storage"
   }
 }
+
 
 resource "aws_s3_bucket_versioning" "vault_storage" {
   bucket = aws_s3_bucket.vault_storage.id
@@ -182,14 +184,14 @@ resource "aws_instance" "vault" {
     chmod +x /usr/local/bin/vault
 
     useradd -r -s /bin/false vault
-    mkdir -p /etc/vault /opt/vault/data
-    chown vault:vault /opt/vault/data
+    mkdir -p /etc/vault
 
     cat > /etc/vault/vault.hcl << 'CONFIG'
 ui = true
 
-storage "file" {
-  path = "/opt/vault/data"
+storage "s3" {
+  bucket = "${aws_s3_bucket.vault_storage.id}"
+  region = "us-east-1"
 }
 
 listener "tcp" {

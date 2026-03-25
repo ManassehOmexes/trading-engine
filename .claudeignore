@@ -1,0 +1,35 @@
+# Python Virtual Environments
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
+
+# Terraform
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.backup
+**/.terraform.lock.hcl
+
+# Secrets
+**/*.env
+**/*.env.local
+**/secrets.local.yaml
+**/vault-token
+**/*credentials*
+
+# Build Artefakte
+**/dist/
+**/build/
+**/*.egg-info/
+
+# IDE
+**/.idea/
+**/.vscode/
+
+# Docker
+**/.dockerignore
+
+# Grosse Dateien
+**/vault
+**/vault_*.zip
+**/*.zip

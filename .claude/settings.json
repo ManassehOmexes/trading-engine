@@ -1,0 +1,70 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(kubectl:*)",
+      "Bash(helm:*)",
+      "Bash(aws:*)",
+      "Bash(terraform:*)",
+      "Bash(python*:*)",
+      "Bash(pytest:*)",
+      "Bash(docker:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)"
+    ],
+    "deny": [
+      "Bash(terraform apply*)",
+      "Bash(terraform destroy*)",
+      "Bash(git push*)",
+      "Bash(kubectl delete namespace*)",
+      "Bash(aws iam *)",
+      "Bash(aws kms delete*)",
+      "Bash(aws s3 rb*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command' >> ~/.claude/bash-audit.log 2>/dev/null || true",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command' | grep -qE '^terraform' && printf '{\"systemMessage\": \"Terraform erkannt: apply/destroy nur via GitHub Actions!\"}' || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); [ -z \"$f\" ] && exit 0; grep -qEi '(password|secret|api_key|private_key|access_key)[=:][^[:space:]]{8,}' \"$f\" 2>/dev/null && printf '{\"systemMessage\": \"Moegliches Secret in der Datei gefunden! Bitte pruefen.\"}' || true",
+            "statusMessage": "Scanne auf Secrets..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '{\"systemMessage\": \"Claude ist fertig.\"}'"
+          }
+        ]
+      }
+    ]
+  }
+}
